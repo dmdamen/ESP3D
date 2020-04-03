@@ -1,5 +1,5 @@
 /*
-	ESP3D
+  ESP3D
 
   Copyright (c) 2014 Luc Lebosse. All rights reserved.
 
@@ -20,17 +20,43 @@
 //library include
 #include "esp3d.h"
 
-//global variable
+#define relayPin 16
+#define powerSwitchPin 17
+
 Esp3D myesp3d;
+volatile bool buttonPressed = false;
+
+void IRAM_ATTR togglePower() {
+  detachInterrupt(digitalPinToInterrupt(powerSwitchPin));
+  buttonPressed = true;
+}
 
 //Setup
 void setup()
 {
     myesp3d.begin();
+    
+    pinMode(relayPin, OUTPUT);
+    pinMode(powerSwitchPin, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(powerSwitchPin), togglePower, RISING);
+
 }
 
 //main loop
 void loop()
 {
-    myesp3d.process();
+  if (buttonPressed) {
+    bool currentPowerState = digitalRead(relayPin);
+    if (currentPowerState){
+      digitalWrite(relayPin, LOW);
+    } else {
+      digitalWrite(relayPin, HIGH);
+    }
+    buttonPressed = false;
+    delay(10);
+    attachInterrupt(digitalPinToInterrupt(powerSwitchPin), togglePower, RISING);
+  }
+
+  myesp3d.process();
+  
 }
